@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Abel&display=swap');
+
+.App {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #1a1a1d;
+    font-family: "Abel", cursive;
+}
+
+.heading {
+    font-size: 40px;
+    color: #E6E6E6;
+    margin: 20px 0;
+    z-index: 1;
+    text-align: center;
+    font-family: "Abel", cursive
+}
+
+.attackerInfo {
+    font-size: 20px;
+    color: #e6e6e6;
+    margin-left: 100px;
+    text-align: left;
+    font-family: "Abel", cursive;
+    float: left;
+}
+
+.meterInfo {
+    font-size: 20px;
+    color: #e6e6e6;
+    margin-right: 100px;
+    text-align: right;
+    font-family: "Abel", cursive;
+    float: right;
+}
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.header {
+    font-size: 25px;
+    color: #ae260b;
+    margin: 20px 0;
+    z-index: 1;
+    text-align: center;
+}
+
+.switchesDiv {
+    display: flex;
+    justify-content: space-between;
+    padding: 50px;
+}
+
+.graph_packet_count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 50px;
+}
+
+/*
+when width < 800px 
+    take these dimensions
+*/
+@media(max-width:800px) {
+    .heading {
+        margin: 15px 0;
+        font-size: 35px;
+    }
+
+    .header {
+        margin: 10px 0;
+        font-size: 20px;
+    }
+
+}

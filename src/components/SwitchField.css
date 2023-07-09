@@ -1,0 +1,11 @@
+.switch-container {
+    position: relative;
+    display: inline-block;
+}
+
+.switch-container:hover .header {
+    /* Define the hover animation styles here */
+    /* Example: */
+    transform: scale(0.9);
+    transition: transform 0.2s ease-in-out;
+}
