@@ -37,11 +37,11 @@ Algorithm DQN Agent Reinforcement Learning
 
 """
 
-NNEUR = 336  # 4*84 #81 #9
+NNEUR = 336 
 L_H = 1
-LAMBD = 0.9  # FOR REWARD
+LAMBD = 0.9
 NUMBER_OF_SWITCHES = 5
-NUMBER_OF_PORTS_PER_SWITCH = 3  # SWITCH 1 APENAS TEM 2...
+NUMBER_OF_PORTS_PER_SWITCH = 3
 MAX_BANDWIDTH = 100
 MIN_BANDWIDTH = 0.1 * MAX_BANDWIDTH
 SPOOFED_SRC_IP = "10.0.1.1"
@@ -359,10 +359,8 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         #     print(f"Episode: {episode+1} /{num_episodes}")
 
         #     # Update the agent
-        #     hist = dqn.fit(self.env, nb_steps=steps_per_episode, visualize=False, verbose=1)
-
-        #     #w = np.mean(hist.history['reward'])
-
+        #     dqn.fit(self.env, nb_steps=steps_per_episode, visualize=False, verbose=1)
+        
         #     if episode+1==num_episodes:
         #         break
         #     episode += 1
