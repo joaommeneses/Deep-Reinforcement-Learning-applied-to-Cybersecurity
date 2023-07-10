@@ -246,7 +246,7 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
 
 
     """
-    Função usada para prepar estado do controlador para o SDNEnvironment do agente
+    Função usada para preparar estado do controlador para o SDNEnvironment do agente
     """
     def prepare_state_for_model(self):
         state_prepared = []
