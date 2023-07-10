@@ -45,8 +45,8 @@ class TrafTopo(Topo):
 
 if __name__ == '__main__':
     topo = TrafTopo()
-    controllerRyu = RemoteController('controllerRyu','10.0.2.15', 6653)
-    net = Mininet(topo=topo, controller=controllerRyu, autoSetMacs=True, waitConnected=True)
+    controllerRyu = RemoteController('controllerRyu','10.0.2.15', 6653) #IP e PORTO do controlador RYU
+    net = Mininet(topo=topo, controller=controllerRyu, autoSetMacs=True, waitConnected=True) #waitConnected faz com que a rede apenas começe quando um controlador estiver conectado
 
     #start network
     net.start()
@@ -63,8 +63,8 @@ if __name__ == '__main__':
     #-i u10000 (10 packets for second)
     #-i u1000 (100 packets for second)
 
+    #ddos
     def ddos_flood_tcp(host):
-        #ddos
         host.cmd('timeout ' + str(episode_length) + 's hping3 -i u1000 ' + ' -a '+ spoofed_ip +' '+ victim_host_ip)
         host.cmd('killall hping3')
 
@@ -77,22 +77,22 @@ if __name__ == '__main__':
         host.cmd('timeout ' + str(episode_length) + 's hping3 -i u1000 --icmp ' + ' -a '+ spoofed_ip +' '+ victim_host_ip)
         host.cmd('killall hping3')
 
+    #benign
     def ddos_benign(host):
-        #benign
         host.cmd('timeout ' + str(episode_length) + 's hping3 ' + victim_host_ip)
         host.cmd('killall hping3')
 
     # random attack host and benign host
     for i in range(episode_count):
         print("Episode "+str(i))
-        attacking_host_id = random.randint(0, no_of_hosts - 2) # select a random host in between 1 and no_of_hosts - 1
+        attacking_host_id = random.randint(0, no_of_hosts - 2) # random attacking host in between 1 and no_of_hosts - 1
         attacking_host = net.hosts[attacking_host_id]
 
-        benign_host_id = random.choice([i for i in range(0, no_of_hosts - 2) if i not in [attacking_host_id]])
+        benign_host_id = random.choice([i for i in range(0, no_of_hosts - 2) if i not in [attacking_host_id]]) # random benign host in between 1 and no_of_hosts - 2
         benign_host = net.hosts[benign_host_id]
         print("host" + str(attacking_host_id) + " is attacking and host" + str(benign_host_id) + " is sending normal requests")
 
-        # Create seperate threads for attacker and benign user
+        # threads separadas para attacking host e benign host
         t1 = threading.Thread(target=ddos_benign, args=(benign_host,))
 
         #t2 = threading.Thread(target=ddos_flood_tcp, args=(attacking_host,)) 

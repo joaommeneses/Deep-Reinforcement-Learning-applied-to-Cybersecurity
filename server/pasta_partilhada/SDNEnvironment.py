@@ -28,6 +28,9 @@ class SDNEnvironment(Env):
         self.state = []
         self.reward = 0
 
+    """
+    Função step do agente, executa ação e calcula reward
+    """
     def step(self, action):
         if action % 2 == 0:
             bandwidth = MIN_BANDWIDTH
@@ -52,7 +55,7 @@ class SDNEnvironment(Env):
 
         previous_state = self.state
         self.controller.get_state()
-        time.sleep(0.5)
+        time.sleep(0.5) # Este 0.5 segundos mais 0.5 segundos no get_state ~= 1 segundo entre cada ação
 
         reward = self.reward
         done = False
@@ -71,7 +74,7 @@ class SDNEnvironment(Env):
         print("total packets benign " + str(self.controller.total_benign_count) + " benign_count " + str(self.controller.benign_count))
         print("Meter bands " + str(self.controller.meter_bands))
         #MAX LOAD = (MAX_BANDWIDTH PACKETS/S * PORTS OF SWITCH) * 5 
-        max_load = (MAX_BANDWIDTH * NUMBER_OF_PORTS_PER_SWITCH) * 4 + (MAX_BANDWIDTH*2) #PS: Switch 1 only has 2 ports
+        #max_load = (MAX_BANDWIDTH * NUMBER_OF_PORTS_PER_SWITCH) * 4 + (MAX_BANDWIDTH*2) #PS: Switch 1 only has 2 ports
 
 
         # if((self.controller.total_attack_count + self.controller.total_benign_count) > max_load):

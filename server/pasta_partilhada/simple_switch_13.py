@@ -26,27 +26,34 @@ from ryu.lib.packet import ether_types
 MAX_BANDWIDTH=100
 
 class SimpleSwitch13(app_manager.RyuApp):
-    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION] #OpenFlow Version 1.3
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch13, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
 
 
-    #Adiciona uma entrada na flow table do switch
+    '''
+    Esta função é chamada quando um evento do tipo EventOFPSwitchFeatures ocorre através do 
+    dispatcher CONFIG na redem
+    ou seja, é chamada quando o switch responde ao controlador com as suas caracteristicas 
+    durante o handshake inicial entre switch e controlador
+    ''' 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        #Criar match vazio para flow entry "TABLE_MISS" do switch
         match = parser.OFPMatch()
+        #Actions = mandar pacote para o controlador sem fazer buffering
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         
         self.add_flow(datapath, 0, match, actions, meter=None)
 
-        #Adicionar meterband ao switch
+        #Adicionar meter ao switch com limite de tráfego máximo
         bands = []
         dropband = parser.OFPMeterBandDrop(rate=MAX_BANDWIDTH, burst_size=0)
         bands.append(dropband)
@@ -63,11 +70,13 @@ class SimpleSwitch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        #Se meter != None adicionar meter ID(1) ao flow para além das ações
         if meter:
             inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions),parser.OFPInstructionMeter(1)]
         else:
             inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         
+        #Se for um pacote buffered é o id do buffer é adicionado à mensagem de criação de flow entry
         if buffer_id:
             mod = parser.OFPFlowMod(datapath=datapath, buffer_id=buffer_id,
                                     priority=priority, match=match,
@@ -77,6 +86,9 @@ class SimpleSwitch13(app_manager.RyuApp):
                                     match=match, instructions=inst)
         datapath.send_msg(mod)
 
+    '''
+    Função é chamada caso chegue um pacote ao controlador através do flow "TABLE_MISS"
+    '''
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         # If you hit this you might want to increase
@@ -114,6 +126,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
 
+        #Se pacote tiver um destino conhecido não é feito FLOOD
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
         else:
@@ -121,7 +134,7 @@ class SimpleSwitch13(app_manager.RyuApp):
 
         actions = [parser.OFPActionOutput(out_port)]
 
-        # install a flow to avoid packet_in next time
+        # Criar flow para não ocorrer "TABLE_MISS" da próxima vez
         if out_port != ofproto.OFPP_FLOOD:
             if (ip):
                 dst_ip = ip.dst
@@ -130,7 +143,7 @@ class SimpleSwitch13(app_manager.RyuApp):
             else:
                 match = parser.OFPMatch(in_port=in_port, eth_dst=dst, eth_src=src)
             # verify if we have a valid buffer_id, if yes avoid to send both
-            # flow_mod & packet_out
+            #Instalar flow novo
             if msg.buffer_id != ofproto.OFP_NO_BUFFER:
                 self.add_flow(datapath, 1, match, actions, msg.buffer_id, meter=True)
                 return
@@ -140,6 +153,7 @@ class SimpleSwitch13(app_manager.RyuApp):
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
             data = msg.data
 
+        #Enviar pacote de volta
         out = parser.OFPPacketOut(datapath=datapath, buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
         datapath.send_msg(out)
