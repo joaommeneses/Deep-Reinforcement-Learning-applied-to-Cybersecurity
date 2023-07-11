@@ -8,9 +8,9 @@ Este projeto consiste na mitigação de ataques DDoS numa rede definida por soft
 Para correr a SDN e o Agente de mitigação:
 
 Correr controlador Ryu
-### ryu-manager traflimit.py
+### `ryu-manager traflimit.py`
 Começar rede simulada no Mininet
-### python3.9 traftopo.py
+### `python3.9 traftopo.py`
 
 Aplicação web  e servidor de sockets:
 
@@ -19,7 +19,7 @@ Para a aplicação web:
 
 Para correr servidor de sockets:
 
-### node index.js
+### `node index.js`
 
 ## Localização dos ficheiros relacionadas à SDN (rede definida por software) e ao Agente
 
