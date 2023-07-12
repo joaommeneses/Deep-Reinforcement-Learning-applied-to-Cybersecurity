@@ -73,24 +73,6 @@ class SDNEnvironment(Env):
         print("\ntotal packets attack " + str(self.controller.total_attack_count) + " attack_count " + str(self.controller.attack_count))
         print("total packets benign " + str(self.controller.total_benign_count) + " benign_count " + str(self.controller.benign_count))
         print("Meter bands " + str(self.controller.meter_bands))
-        #MAX LOAD = (MAX_BANDWIDTH PACKETS/S * PORTS OF SWITCH) * 5 
-        #max_load = (MAX_BANDWIDTH * NUMBER_OF_PORTS_PER_SWITCH) * 4 + (MAX_BANDWIDTH*2) #PS: Switch 1 only has 2 ports
-
-
-        # if((self.controller.total_attack_count + self.controller.total_benign_count) > max_load):
-        #     self.reward = -1
-        # else:
-        #     if(self.controller.total_attack_count == 0):
-        #         pa = 0
-        #     else:
-        #         pa = float(self.controller.attack_count) / float(self.controller.total_attack_count)
-
-        #     if(self.controller.total_benign_count == 0):
-        #         pb = 0
-        #     else:
-        #         pb = float(self.controller.benign_count) / float(self.controller.total_benign_count)
-
-        #     self.reward = float(LAMBD * pb) + float((1 - LAMBD) * (1 - pa))
 
         # 2λpb + 2(1 − λ)(1 − pa) - 1
         if(self.controller.total_attack_count == 0 and self.controller.total_benign_count==0):
