@@ -50,8 +50,6 @@ DEST_IP = "10.0.0." + str(NUMBER_OF_SWITCHES + 1)
 STATE_DIM = 75  # Total de campos por switch (datapath)
 ACTION_DIM = 10  # 2 actions para cada switch
 
-MAX_STEP_PER_EP = 100
-
 JSON_PATH = "/media/sf_pasta_partilhada/networkState.json"
 
 class TrafLimit(simple_switch_13.SimpleSwitch13):
@@ -308,11 +306,6 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
 
             with open(JSON_PATH, 'w') as json_file:
                 json_file.write(json_list)
-
-
-            print(f"previous_state {previous_state}")
-            print(f"prepared state {self.state_prepared}" )
-            print(f"temp state {temp_state}" )
 
     def build_model(self, states, actions):
         model = Sequential()
