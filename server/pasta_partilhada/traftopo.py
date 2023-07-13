@@ -16,10 +16,6 @@ class TrafTopo(Topo):
         s3 = self.addSwitch('s3', cls=OVSSwitch)
         s4 = self.addSwitch('s4', cls=OVSSwitch)
         s5 = self.addSwitch('s5', cls=OVSSwitch)
-    
-        #Traditional switches
-        # s6 = self.addSwitch('s6', cls=Switch)
-        # s7 = self.addSwitch('s7', cls=Switch)
 
         #Hosts
         h1 = self.addHost('h1')
@@ -45,8 +41,8 @@ class TrafTopo(Topo):
 
 if __name__ == '__main__':
     topo = TrafTopo()
-    controllerRyu = RemoteController('controllerRyu','10.0.2.15', 6653)
-    net = Mininet(topo=topo, controller=controllerRyu, autoSetMacs=True, waitConnected=True)
+    controllerRyu = RemoteController('controllerRyu','10.0.2.15', 6653) #IP e PORTO do controlador RYU
+    net = Mininet(topo=topo, controller=controllerRyu, autoSetMacs=True, waitConnected=True) #waitConnected faz com que a rede apenas começe quando um controlador estiver conectado
 
     #start network
     net.start()
@@ -63,8 +59,8 @@ if __name__ == '__main__':
     #-i u10000 (10 packets for second)
     #-i u1000 (100 packets for second)
 
+    #ddos
     def ddos_flood_tcp(host):
-        #ddos
         host.cmd('timeout ' + str(episode_length) + 's hping3 -i u1000 ' + ' -a '+ spoofed_ip +' '+ victim_host_ip)
         host.cmd('killall hping3')
 
@@ -77,22 +73,22 @@ if __name__ == '__main__':
         host.cmd('timeout ' + str(episode_length) + 's hping3 -i u1000 --icmp ' + ' -a '+ spoofed_ip +' '+ victim_host_ip)
         host.cmd('killall hping3')
 
+    #benign
     def ddos_benign(host):
-        #benign
         host.cmd('timeout ' + str(episode_length) + 's hping3 ' + victim_host_ip)
         host.cmd('killall hping3')
 
-    # random attack host and benign host
+    # host atacante e host benigno random
     for i in range(episode_count):
         print("Episode "+str(i))
-        attacking_host_id = random.randint(0, no_of_hosts - 2) # select a random host in between 1 and no_of_hosts - 1
+        attacking_host_id = random.randint(0, no_of_hosts - 2) # host atacante random entre 1 e no_of_hosts - 1
         attacking_host = net.hosts[attacking_host_id]
 
-        benign_host_id = random.choice([i for i in range(0, no_of_hosts - 2) if i not in [attacking_host_id]])
+        benign_host_id = random.choice([i for i in range(0, no_of_hosts - 2) if i not in [attacking_host_id]]) # host benigno random entre 1 e no_of_hosts - 2
         benign_host = net.hosts[benign_host_id]
         print("host" + str(attacking_host_id) + " is attacking and host" + str(benign_host_id) + " is sending normal requests")
 
-        # Create seperate threads for attacker and benign user
+        # threads separadas para attacking host e benign host
         t1 = threading.Thread(target=ddos_benign, args=(benign_host,))
 
         #t2 = threading.Thread(target=ddos_flood_tcp, args=(attacking_host,)) 
@@ -104,7 +100,7 @@ if __name__ == '__main__':
             t2 = threading.Thread(target=ddos_flood_icmp, args=(attacking_host,))
 
         
-        # determine the switch being attacked based on the attacking host ID
+        # switch a ser atacado
         if attacking_host_id in [0, 1]:
             switch_id = 2
         elif attacking_host_id in [2, 3]:
@@ -112,10 +108,10 @@ if __name__ == '__main__':
         elif attacking_host_id in [4, 5]:
             switch_id = 4
 
-        # dictionary representing the attack information for dashboard alert
+        # dicionario com informação de ataque para aplicação web
         attack_info = {"Attacker": str(attacking_host_id), "Switch": str(switch_id)}
         attack_info_list = json.dumps(attack_info)
-        # Save the attack information to the attackInfo.json file
+        # Guardar informação do ataque num ficheiro json
         with open(JSON_PATH, 'w') as file:
             file.write(attack_info_list)
 

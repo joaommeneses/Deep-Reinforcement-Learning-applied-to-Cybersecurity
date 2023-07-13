@@ -37,11 +37,11 @@ Algorithm DQN Agent Reinforcement Learning
 
 """
 
-NNEUR = 336  # 4*84 #81 #9
+NNEUR = 336 
 L_H = 1
-LAMBD = 0.9  # FOR REWARD
+LAMBD = 0.9
 NUMBER_OF_SWITCHES = 5
-NUMBER_OF_PORTS_PER_SWITCH = 3  # SWITCH 1 APENAS TEM 2...
+NUMBER_OF_PORTS_PER_SWITCH = 3
 MAX_BANDWIDTH = 100
 MIN_BANDWIDTH = 0.1 * MAX_BANDWIDTH
 SPOOFED_SRC_IP = "10.0.1.1"
@@ -49,8 +49,6 @@ DEST_IP = "10.0.0." + str(NUMBER_OF_SWITCHES + 1)
 
 STATE_DIM = 75  # Total de campos por switch (datapath)
 ACTION_DIM = 10  # 2 actions para cada switch
-
-MAX_STEP_PER_EP = 100
 
 JSON_PATH = "/media/sf_pasta_partilhada/networkState.json"
 
@@ -70,15 +68,12 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         self.total_benign_count = 0
 
     """
-    The event handler associated with this decorator is called on change of 
-    state in the network
-    i.e whenever a new switch is associated with the controller
+    Esta função é chamada quando ocorre uma alteração ao estado da rede como por exemplo um switch é associado ao controlador
     """
-
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         datapath = ev.datapath
-        if ev.state == MAIN_DISPATCHER:  # new switch
+        if ev.state == MAIN_DISPATCHER:  # caso novo switch
             if datapath.id not in self.datapaths:
                 self.state[datapath.id] = []
                 self.datapaths[datapath.id] = datapath
@@ -90,6 +85,12 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         self.state = dict(sorted(self.state.items()))
         self.datapaths = dict(sorted(self.datapaths.items()))
 
+    """
+    Função de "inicialização" do controlador
+    Espera 5 segundos para dar tempo para iniciar o script de rede do mininet
+    Cria o environment no formato correto para o agente (SDNEnvironment)
+    Chama função main onde corre o ciclo de treino/teste do agente
+    """
     def _monitor(self):
         print("Initializing...")
         hub.sleep(5)
@@ -97,6 +98,17 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         self.env.controller = self
         self.main()
 
+
+    """
+    Função get_state do controlador
+    É chamada pela função reset do SDNEnvironment e após cada ação na função step
+    Envia pedido das estatísticas dos flows para os switchs(datapaths)
+    Espera 0.5 segundos para as repostas chegarem e serem processadas
+    Após o controlador estar atualizado com o estado da rede atual, 
+    prepara o estado para o SDNEnvironment (prepare_state_for_model) do agente
+    e calcula a reward da ação anterior
+
+    """
     def get_state(self):
         for dp in self.datapaths.values():
             self.send_flow_stats_request(dp)
@@ -110,7 +122,7 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         datapath.send_msg(req)
 
     """
-    Method executes when a flow stats reply arrives from switch (datapath)
+    Função chamada quando chegam a resposta de um datapath (switch) em relação a um pedido de estatísticas de flow
     """
 
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
@@ -127,18 +139,19 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             packet_count_n += stat.packet_count
             byte_count_n += stat.byte_count
             duration_nsec += stat.duration_nsec
-            try: #in range (border switches)
+            try: #Se pacotes do flow vierem do host atacante incrementa-se contagem do total de pacotes atacantes na rede
                 if (stat.match.__getitem__("ipv4_src") == SPOOFED_SRC_IP and stat.match.__getitem__("ipv4_dst") == DEST_IP and datapath.id in range(2,5)):
                     self.total_attack_count += stat.packet_count
-                    if(datapath.id == 4):
+                    if(datapath.id == 4): #Se chegarem ao switch da vítima incrementa-se pacotes de ataque 
                         self.attack_count += stat.packet_count
 
                 elif (stat.match.__getitem__("ipv4_src") != SPOOFED_SRC_IP and datapath.id in range(2,5)) :
-                    self.total_benign_count += stat.packet_count
+                    self.total_benign_count += stat.packet_count #total de pacotes benignos na rede
                     if(datapath.id == 4):
-                        self.benign_count += stat.packet_count
+                        self.benign_count += stat.packet_count #total de pacotes benignos que chegam à vitima
             except:
                 pass
+        #Atualizar estado dos datapaths no controlador
         if len(self.state[datapath.id]) == 0:
             self.state[datapath.id].append({})
             self.state[datapath.id].append(packet_count_n)
@@ -148,11 +161,15 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             self.state[datapath.id][1] = packet_count_n
             self.state[datapath.id][2] = byte_count_n
             self.state[datapath.id][3] = duration_nsec
+        
+        #Pedir estatísticas dos portos dos datapaths
         for port_no in range(1, NUMBER_OF_PORTS_PER_SWITCH + 1):
             req = ofp_parser.OFPPortStatsRequest(datapath, 0, port_no)
             datapath.send_msg(req)
 
-    # dados do port de um switch(datapath)
+    """
+    Função chamada quando chega a respota ao pedido das estatísticas de um porto de um datapath
+    """
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def _port_stats_reply_handler(self, ev):
         body = ev.msg.body
@@ -166,7 +183,9 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             temp.append(str(stat.tx_bytes))
             self.state[datapath.id][0][stat.port_no] = temp
     
-
+    """
+    Função usada para executar ação do agente na função step, alterar a meter band de um datapath
+    """
     def add_meter_band(self, datapath, rate):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -175,7 +194,7 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         dropband = parser.OFPMeterBandDrop(rate=int(rate), burst_size=0)
         bands.append(dropband)
 
-        # Delete existing meter
+        # Apagar meter existente
         request = parser.OFPMeterMod(
             datapath=datapath,
             command=ofproto.OFPMC_DELETE,
@@ -183,7 +202,7 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             meter_id=1,
         )
         datapath.send_msg(request)
-        # Create new meter
+        # Create novo meter com meter band nova
         request = parser.OFPMeterMod(
             datapath=datapath,
             command=ofproto.OFPMC_ADD,
@@ -194,6 +213,10 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         datapath.send_msg(request)
         self.send_meter_config_stats_request(datapath)
 
+    """
+    As duas funções seguintes pedem a configuração do meter aos switches e processam a respota
+    para atualizar o self.meters após uma ação
+    """
     def send_meter_config_stats_request(self, datapath):
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
@@ -220,10 +243,13 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         self.logger.debug('MeterConfigStats: %s', configs)
 
 
-
+    """
+    Função usada para preparar estado do controlador para o SDNEnvironment do agente
+    """
     def prepare_state_for_model(self):
         state_prepared = []
 
+        #Converter o estado em formato de dicionário para lista
         for key in self.state.keys():
             data = self.state[key]
             if data:
@@ -246,7 +272,9 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             state_prepared.append(byte_count)
             state_prepared.append(duration_nsec)
 
+        # Após converter o estado de dicionário para lista, calculamos a diferença entre o estado novo e o antigo
         if len(state_prepared) != 0:
+            #Transformar os valores em inteiros
             state_prepared = list(map(int, state_prepared))
 
             iter_count = (NUMBER_OF_PORTS_PER_SWITCH * 4 + 3) * NUMBER_OF_SWITCHES
@@ -261,9 +289,11 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
             temp_state = [a - b for a,b in zip(self.state_prepared, previous_state)]
 
 
-            self.env.state = temp_state #We want our dqn agent to train based on network statistics every T seconds, 
-                                        #hence we define the environment state for the agent as the difference between current and previous state
-                            
+            self.env.state = temp_state #Queremos que o agente DQN treino com as diferenças do estado a cada ação ou seja a cada segundo, 
+                                        #para isso definimos o estado do agente como a diferença entre o estado agora e antes da ação há 1 segundo
+
+
+            ## Escrever estado para ficheiro para aplicação web             
             stateDict = {}
 
             for i in range(0, len(self.env.state), 15):
@@ -276,11 +306,6 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
 
             with open(JSON_PATH, 'w') as json_file:
                 json_file.write(json_list)
-
-
-            print(f"previous_state {previous_state}")
-            print(f"prepared state {self.state_prepared}" )
-            print(f"temp state {temp_state}" )
 
     def build_model(self, states, actions):
         model = Sequential()
@@ -321,20 +346,21 @@ class TrafLimit(simple_switch_13.SimpleSwitch13):
         batch_size = 16
         episode = 0
         self.env.reset()
+        ### CICLO TESTE ###
         # while True:
 
         #     print(f"Episode: {episode+1} /{num_episodes}")
 
         #     # Update the agent
-        #     hist = dqn.fit(self.env, nb_steps=steps_per_episode, visualize=False, verbose=1)
-
-        #     #w = np.mean(hist.history['reward'])
-
+        #     dqn.fit(self.env, nb_steps=steps_per_episode, visualize=False, verbose=1)
+        
         #     if episode+1==num_episodes:
         #         break
         #     episode += 1
 
         # dqn.save_weights("trained_model.h5", overwrite=True)
+
+        ### CICLO TREINO ###
         while len(self.datapaths) > 0:
             dqn.load_weights("trained_model_5k_episodes.h5")
 
