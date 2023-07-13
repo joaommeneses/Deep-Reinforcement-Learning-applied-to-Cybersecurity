@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
         # dicionario com informação de ataque para aplicação web
         attack_info = {"Attacker": str(attacking_host_id), "Switch": str(switch_id)}
-        attack_info_list = json.dumps(attack_info)
+        attack_info_list = json.dumps({"AttackInfo": attack_info})
         # Guardar informação do ataque num ficheiro json
         with open(JSON_PATH, 'w') as file:
             file.write(attack_info_list)

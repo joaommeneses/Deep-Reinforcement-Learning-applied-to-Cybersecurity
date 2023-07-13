@@ -55,7 +55,7 @@ const App: React.FC = () => {
 
   let data: any = [];                                                         //Variável que vai guardar os dados que vão ser apresentados no gráfico
   let meterInfoElements = null;
-
+  let attackInfoElements = null
 
   if (meterInfo) {
     meterInfoElements = Object.keys(meterInfo['Meter bands']).map((switchId) => (
@@ -64,6 +64,16 @@ const App: React.FC = () => {
       </p>
     ));
   }
+
+  if (attackerInfo) {
+    attackInfoElements = Object.keys(attackerInfo).map(() => (
+      <div>
+        <p>Attacker ID: {attackerInfo['AttackInfo'].Attacker}</p>
+        <p>Switch Being Attacked: {attackerInfo['AttackInfo'].Switch}</p>
+      </div>
+    ));
+  }
+
   if (queue) {
     //Atualização dos dados do gráfico 
     data = queue.toArray().map((networkStateWithTimestamp: NetworkStateWithTimestamp) => {
@@ -95,11 +105,10 @@ const App: React.FC = () => {
       <span className='heading'>Cibersegurança com Deep Reinforcement Learning</span>
       <h3 className='header'>Monitorize a sua rede - {networkState && Object.keys(networkState).length} Switches a serem monitorizados</h3>
       <div className='clearfix'>
-        {attackerInfo && (
+        {attackInfoElements && (
           <div className='attackerInfo'>
             <h4>Current Attacker</h4>
-            <p>Attacker ID: {attackerInfo.Attacker}</p>
-            <p>Switch Being Attacked: {attackerInfo.Switch}</p>
+            {attackInfoElements}
           </div>
         )}
 
