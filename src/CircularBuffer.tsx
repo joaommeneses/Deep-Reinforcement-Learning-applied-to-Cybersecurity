@@ -1,7 +1,7 @@
 class CircularBuffer<T> {
-    private size: number;
-    private buffer: T[];
-    private nextInsertIndex: number;
+    private size: number;                   //tamanho do buffer
+    private buffer: T[];                    //array que armazena elementos do buffer
+    private nextInsertIndex: number;        //numero que representa o indice onde o proximo elemento será inserido
 
     constructor(capacity: number) {
         this.buffer = new Array<T>(capacity);
@@ -9,6 +9,8 @@ class CircularBuffer<T> {
         this.nextInsertIndex = 0;
     }
 
+    //recebe um elemento como parametro e insere no buffer, atualizando o indice 
+    //se o tamanho do buffer for menor que a capacidade maxima o tamanho é incrementado
     enqueue(item: T) {
         this.buffer[this.nextInsertIndex] = item;
         this.nextInsertIndex = (this.nextInsertIndex + 1) % this.buffer.length;
@@ -18,6 +20,8 @@ class CircularBuffer<T> {
         }
     }
 
+    //remove e devolve  o elemento mais antigo do buffer
+    //se o buffer estiver vazio devolve undefined        
     dequeue(): T | undefined {
         if (this.isEmpty()) {
             return undefined;
@@ -28,18 +32,22 @@ class CircularBuffer<T> {
         return oldestItem;
     }
 
+    //verifica se o buffer está vazio 
     isEmpty(): boolean {
         return this.size === 0;
     }
 
+    //verifica se o bugger está cheio
     isFull(): boolean {
         return this.size === this.buffer.length;
     }
 
+    //devolve o tamanho atual do buffer
     getSize(): number {
         return this.size;
     }
 
+    //devolve um array com os elementos do buffer
     toArray(): T[] {
         const result: T[] = [];
         for (let i = 0; i < this.size; i++) {

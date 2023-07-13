@@ -1,56 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import SwitchField from "./components/SwitchField";
 import { LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from "recharts";
 import socketIOClient from 'socket.io-client';
 import CircularBuffer from './CircularBuffer';
 
-interface NetworkStateWithTimestamp {
+interface NetworkStateWithTimestamp {           //Interface que define a estrutura de objetos que guarda o estado da SDN
   state: any;
   timestamp: string;
 }
 
-interface SwitchState {
+interface SwitchState {                         //Interface que guarda a quantidade de pacotes que passam por cada switch 
   [key: string]: number;
 }
 
 const App: React.FC = () => {
+  /*
+  Variáveis de estado
+    networkState: guarda o conteúdo proveniente do ficheiro networkState.json 
+    queue: estrutura de dados CircularBuffer, FIFO, que guarda os últimos 10 estados da SDN
+    attackerInfo: guarda o conteúdo proviniente do ficheiro attackInfo.json
+    meterInfo: guarda o conteúdo proviniente do ficheiro meterBands.json
+  */
   const [networkState, setNetworkState] = useState<any>(null);
   const [queue, setQueue] = useState<CircularBuffer<NetworkStateWithTimestamp> | null>(null);
   const [attackerInfo, setAttackerInfo] = useState<any>(null);
   const [meterInfo, setMeterInfo] = useState<any>(null);
 
+  //Hook que lida com o ciclo de vida da aplicação React, é executada antes da página ser renderizada
   useEffect(() => {
     const socket = socketIOClient("http://127.0.0.1:4001/");
 
-    const circularBuffer = new CircularBuffer<NetworkStateWithTimestamp>(10);
-    setQueue(circularBuffer);
+    const circularBuffer = new CircularBuffer<NetworkStateWithTimestamp>(10); //Criação do Circular Buffer
+    setQueue(circularBuffer);                                                 //Atualização da queue
 
-    socket.on("message", (networkStateData) => {
-      setNetworkState(networkStateData);
-      const timestamp = new Date().toISOString(); // Generate a timestamp for the current network state
-      const networkStateWithTimestamp: NetworkStateWithTimestamp = { state: networkStateData, timestamp };
-      console.log("NETWORK STATE WITH TIMESTAMP => ", networkStateWithTimestamp)
-
-      circularBuffer.enqueue(networkStateWithTimestamp);
+    socket.on("message", (networkStateData) => {                              //Callback executada quando o servidor de sockets envia uma mensagem com o estado da rede, output guardado em networkStateData
+      setNetworkState(networkStateData);                                      //Atualização do estado mais recente da rede
+      const timestamp = new Date().toISOString();                             //Gerar nova timestamp
+      const networkStateWithTimestamp: NetworkStateWithTimestamp = { state: networkStateData, timestamp };  //Criação de um objeto do tipo NetworkStateWithTimestamp que guarda o estado e a timestamp associada      
+      circularBuffer.enqueue(networkStateWithTimestamp);                      //Adicionar estado á queue (primeiro estado inserido na queue é removido quando a queue já guardar 10 estados - FIFO)
     });
 
-    socket.on("attackInfoMessage", (attackData) => {
+    socket.on("attackInfoMessage", (attackData) => {                          //Callback executada quando o servidor de sockets envia uma mensagem com informação relativa ao ataque, output guardado em attackData
       setAttackerInfo(attackData);
-      console.log("Attacking data => ", attackData)
     });
 
-    socket.on("meterBandsMessage", (meterInfo) => {
+    socket.on("meterBandsMessage", (meterInfo) => {                           //Callback executada quando o servidor de sockets envia uma mensagem com informação relativa aos meters da rede, output guardado em meterInfo
       setMeterInfo(meterInfo);
-      console.log("Meters data => ", meterInfo)
     });
 
     return () => {
-      socket.disconnect();
+      socket.disconnect();                                                    //Desconectar do socket
     };
   }, []);
 
-  let data: any = [];
+  let data: any = [];                                                         //Variável que vai guardar os dados que vão ser apresentados no gráfico
   let meterInfoElements = null;
 
 
@@ -62,14 +65,14 @@ const App: React.FC = () => {
     ));
   }
   if (queue) {
-    // Retrieve the data from the queue and format it for the chart
+    //Atualização dos dados do gráfico 
     data = queue.toArray().map((networkStateWithTimestamp: NetworkStateWithTimestamp) => {
       const timestamp = new Date(networkStateWithTimestamp.timestamp);
       const formattedTimestamp = `${timestamp.getDate()}/${timestamp.getMonth() + 1} - ${timestamp.getHours()}:${timestamp.getMinutes()}:${timestamp.getSeconds()}h`;
       const switchState: SwitchState = {};
 
       Object.keys(networkStateWithTimestamp.state).forEach((key) => {
-        switchState[key] = networkStateWithTimestamp.state[key][11]; // Access the 12th attribute for each switch
+        switchState[key] = networkStateWithTimestamp.state[key][11]; // Aceder ao 12º atributo para guardar o número de pacotes que passou pelo switch desde o ultimo estado
       });
 
       return {
@@ -79,7 +82,7 @@ const App: React.FC = () => {
     });
   }
 
-  const switchColors: { [key: string]: string } = {
+  const switchColors: { [key: string]: string } = {                  //Cores para switches no gráfico
     "1": "red",
     "2": "blue",
     "3": "yellow",
@@ -120,7 +123,7 @@ const App: React.FC = () => {
                 key={key}
                 type="monotone"
                 dataKey={key}
-                stroke={switchColors[key]} // Use the defined color for each switch key
+                stroke={switchColors[key]}
                 strokeWidth={3}
               />
             ))}

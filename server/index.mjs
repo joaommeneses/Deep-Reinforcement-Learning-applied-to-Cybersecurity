@@ -19,12 +19,10 @@ let lastMeterBands = null;
 server.on('connection', (socket) => {
     console.log('Connected');
 
-    // Watch the networkState.json file for changes
+    // Ver se ficheiro networkState.json sofreu alterações
     fs.watch('pasta_partilhada/networkState.json', (eventType, filename) => {
         if (eventType === 'change' && filename === 'networkState.json') {
-            // File has been modified
-            console.log('networkState.json updated');
-
+            // Ficheiro foi modificado            
             fs.stat('pasta_partilhada/networkState.json', (err, stats) => {
                 if (err) {
                     console.error('Error reading networkState.json:', err);
@@ -34,14 +32,14 @@ server.on('connection', (socket) => {
                 const currentModifiedTime = stats.mtimeMs;
 
                 if (lastModifiedTime === null || currentModifiedTime > lastModifiedTime) {
-                    // Read the contents of the networkState.json file
+                    // Ler conteúdo do ficheiro networkState.json
                     fs.readFile('pasta_partilhada/networkState.json', 'utf8', (err, data) => {
                         if (err) {
                             console.error('Error reading networkState.json:', err);
                             return;
                         }
 
-                        // Parse the JSON data
+                        // Fazer parse dos dados para JSON
                         let networkStateData = null;
                         try {
                             networkStateData = JSON.parse(data);
@@ -50,10 +48,10 @@ server.on('connection', (socket) => {
                             return;
                         }
 
-                        // Send the data to the connected socket client
+                        // mandar dados para o socket cliente conectado
                         socket.emit('message', networkStateData);
 
-                        // Update the last modified time
+                        // Atualizar a ultima atualização
                         lastModifiedTime = currentModifiedTime;
                     });
                 }
@@ -63,12 +61,10 @@ server.on('connection', (socket) => {
 
 
 
-    // Watch the attackInfo.json file for changes
+    // Ver se ficheiro attackInfo.json sofreu alterações
     fs.watch('pasta_partilhada/attackInfo.json', (eventType, filename) => {
         if (eventType === 'change' && filename === 'attackInfo.json') {
-            // File has been modified
-            console.log('attackInfo.json updated');
-
+            // Ficheiro foi modificado                
             fs.stat('pasta_partilhada/attackInfo.json', (err, stats) => {
                 if (err) {
                     console.error('Error reading attackInfo.json:', err);
@@ -77,14 +73,14 @@ server.on('connection', (socket) => {
 
                 const currentModifiedTime = stats.mtimeMs;
 
-                // Read the contents of the attackInfo.json file
+                // Ler conteúdo do ficheiro attackInfo.json
                 fs.readFile('pasta_partilhada/attackInfo.json', 'utf8', (err, data) => {
                     if (err) {
                         console.error('Error reading attackInfo.json:', err);
                         return;
                     }
 
-                    // Parse the JSON data
+                    // Fazer parse dos dados para JSON
                     let attackData = null;
                     try {
                         attackData = JSON.parse(data);
@@ -93,18 +89,19 @@ server.on('connection', (socket) => {
                         return;
                     }
 
-                    // Compare the data with the previous content
+                    // Comparar dados lidos com os ultimos dados lidos
+                    //se não existirem dados lidos guardar dados atuais
                     if (lastAttackData == null) {
                         lastAttackData = attackData
                     }
+                    //se existirem dados, verificar se existe diferença de conteúdo
                     if (JSON.stringify(attackData) !== JSON.stringify(lastAttackData)) {
-                        // Data has changed
-                        console.log('attackInfo.json data has changed');
-
-                        // Send the data to the connected socket client
+                        //Dados são diferentes                             
+                        //Enviar dados para socket cliente conectado
                         socket.emit('attackInfoMessage', attackData);
 
-                        // Update the last modified time and data
+
+                        //atualizar dados antigos para dados atuais e data de ultima alteração
                         lastModifiedTime = currentModifiedTime;
                         lastAttackData = attackData;
                     }
@@ -113,12 +110,10 @@ server.on('connection', (socket) => {
         }
     });
 
-    // Watch the meterBands.json file for changes
+    // Ver se ficheiro meterBands.json sofreu alterações
     fs.watch('pasta_partilhada/meterBands.json', (eventType, filename) => {
         if (eventType === 'change' && filename === 'meterBands.json') {
-            // File has been modified
-            console.log('meterBands.json updated');
-
+            // Ficheiro foi modificado     
             fs.stat('pasta_partilhada/meterBands.json', (err, stats) => {
                 if (err) {
                     console.error('Error reading meterBands.json:', err);
@@ -127,14 +122,14 @@ server.on('connection', (socket) => {
 
                 const currentModifiedTime = stats.mtimeMs;
 
-                // Read the contents of the meterBands.json file
+                // Ler conteúdo do ficheiro meterBands.json
                 fs.readFile('pasta_partilhada/meterBands.json', 'utf8', (err, data) => {
                     if (err) {
                         console.error('Error reading meterBands.json:', err);
                         return;
                     }
 
-                    // Parse the JSON data
+                    // Fazer parse dos dados para JSON
                     let meterBands = null;
                     try {
                         meterBands = JSON.parse(data);
@@ -143,18 +138,18 @@ server.on('connection', (socket) => {
                         return;
                     }
 
+                    // Comparar dados lidos com os ultimos dados lidos
+                    //se não existirem dados lidos guardar dados atuais
                     if (lastMeterBands == null) {
                         lastMeterBands = meterBands
                     }
-                    // Compare the data with the previous content
+                    //se existirem dados, verificar se existe diferença de conteúdo
                     if (JSON.stringify(meterBands) !== JSON.stringify(lastMeterBands)) {
-                        // Data has changed
-                        console.log('meterBands.json data has changed');
-
-                        // Send the data to the connected socket client
+                        //Dados são diferentes                             
+                        //Enviar dados para socket cliente conectado
                         socket.emit('meterBandsMessage', meterBands);
 
-                        // Update the last modified time and data
+                        //atualizar dados antigos para dados atuais e data de ultima alteração
                         lastModifiedTime = currentModifiedTime;
                         lastMeterBands = meterBands;
                     }
@@ -164,6 +159,7 @@ server.on('connection', (socket) => {
     });
 });
 
+//Conectar a porto
 httpServer.listen(port, () => {
     console.log(`Socket server listening on port ${port}`);
 });
