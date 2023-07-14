@@ -93,9 +93,10 @@ server.on('connection', (socket) => {
                     //se não existirem dados lidos guardar dados atuais
                     if (lastAttackData == null) {
                         lastAttackData = attackData
+                        socket.emit('attackInfoMessage', attackData);
                     }
                     //se existirem dados, verificar se existe diferença de conteúdo
-                    if (JSON.stringify(attackData) !== JSON.stringify(lastAttackData)) {
+                    else if (JSON.stringify(attackData) !== JSON.stringify(lastAttackData)) {
                         //Dados são diferentes                             
                         //Enviar dados para socket cliente conectado
                         socket.emit('attackInfoMessage', attackData);
@@ -142,9 +143,10 @@ server.on('connection', (socket) => {
                     //se não existirem dados lidos guardar dados atuais
                     if (lastMeterBands == null) {
                         lastMeterBands = meterBands
+                        socket.emit('meterBandsMessage', meterBands);
                     }
                     //se existirem dados, verificar se existe diferença de conteúdo
-                    if (JSON.stringify(meterBands) !== JSON.stringify(lastMeterBands)) {
+                    else if (JSON.stringify(meterBands) !== JSON.stringify(lastMeterBands)) {
                         //Dados são diferentes                             
                         //Enviar dados para socket cliente conectado
                         socket.emit('meterBandsMessage', meterBands);
